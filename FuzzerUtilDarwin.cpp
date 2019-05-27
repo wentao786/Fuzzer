@@ -10,13 +10,9 @@
 //===----------------------------------------------------------------------===//
 #include "FuzzerDefs.h"
 #if LIBFUZZER_APPLE
-
-#include "FuzzerIO.h"
 #include <mutex>
 #include <signal.h>
 #include <spawn.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/wait.h>
 
 // There is no header for this on macOS so declare here
@@ -99,16 +95,11 @@ int ExecuteCommand(const std::string &Command) {
   pid_t Pid;
   char **Environ = environ; // Read from global
   const char *CommandCStr = Command.c_str();
-  char *const Argv[] = {
-    strdup("sh"),
-    strdup("-c"),
-    strdup(CommandCStr),
-    NULL
-  };
+  const char *Argv[] = {"sh", "-c", CommandCStr, NULL};
   int ErrorCode = 0, ProcessStatus = 0;
   // FIXME: We probably shouldn't hardcode the shell path.
   ErrorCode = posix_spawn(&Pid, "/bin/sh", NULL, &SpawnAttributes,
-                          Argv, Environ);
+                          (char *const *)Argv, Environ);
   (void)posix_spawnattr_destroy(&SpawnAttributes);
   if (!ErrorCode) {
     pid_t SavedPid = Pid;
@@ -127,8 +118,6 @@ int ExecuteCommand(const std::string &Command) {
     // Shell execution failure.
     ProcessStatus = W_EXITCODE(127, 0);
   }
-  for (unsigned i = 0, n = sizeof(Argv) / sizeof(Argv[0]); i < n; ++i)
-    free(Argv[i]);
 
   // Restore the signal handlers of the current process when the last thread
   // using this function finishes.
@@ -155,7 +144,5 @@ int ExecuteCommand(const std::string &Command) {
   }
   return ProcessStatus;
 }
-
-} // namespace fuzzer
-
+}
 #endif // LIBFUZZER_APPLE

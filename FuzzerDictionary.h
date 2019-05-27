@@ -12,17 +12,15 @@
 #ifndef LLVM_FUZZER_DICTIONARY_H
 #define LLVM_FUZZER_DICTIONARY_H
 
-#include "FuzzerDefs.h"
-#include "FuzzerIO.h"
-#include "FuzzerUtil.h"
 #include <algorithm>
 #include <limits>
 
+#include "FuzzerDefs.h"
+
 namespace fuzzer {
 // A simple POD sized array of bytes.
-template <size_t kMaxSizeT> class FixedWord {
+template <size_t kMaxSize> class FixedWord {
 public:
-  static const size_t kMaxSize = kMaxSizeT;
   FixedWord() {}
   FixedWord(const uint8_t *B, uint8_t S) { Set(B, S); }
 
@@ -33,12 +31,10 @@ public:
   }
 
   bool operator==(const FixedWord<kMaxSize> &w) const {
-    ScopedDoingMyOwnMemOrStr scoped_doing_my_own_mem_os_str;
     return Size == w.Size && 0 == memcmp(Data, w.Data, Size);
   }
 
   bool operator<(const FixedWord<kMaxSize> &w) const {
-    ScopedDoingMyOwnMemOrStr scoped_doing_my_own_mem_os_str;
     if (Size != w.Size)
       return Size < w.Size;
     return memcmp(Data, w.Data, Size) < 0;
@@ -53,7 +49,7 @@ private:
   uint8_t Data[kMaxSize];
 };
 
-typedef FixedWord<64> Word;
+typedef FixedWord<27> Word; // 28 bytes.
 
 class DictionaryEntry {
  public:
@@ -125,3 +121,4 @@ bool ParseDictionaryFile(const std::string &Text, std::vector<Unit> *Units);
 }  // namespace fuzzer
 
 #endif  // LLVM_FUZZER_DICTIONARY_H
+
